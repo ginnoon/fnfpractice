@@ -1064,6 +1064,7 @@
                 return (match && match[1].length === 11) ? match[1] : null;
             }
             player.loadVideoById(extractYouTubeId(document.getElementById('ytid-input').value));
+            player.setVolume(30);
             // player.cueVideoById(document.getElementById('ytid-input').value);
 
             const oneBeatInterval = 60000 / gameState.bpm;
