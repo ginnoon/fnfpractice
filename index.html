@@ -1072,6 +1072,7 @@
             const exactDelayBeatsTime = requiredBeats * oneBeatInterval;
             setTimeout(() => {
                 player.playVideo();
+                player.setVolume(30);
             }, exactDelayBeatsTime);
         });
     </script>
