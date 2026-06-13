@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FNF practice</title>
+
+    <meta property="og:title" content="FNF practice" />
+    <meta property="og:description" content="This is a website for practicing Friday Night Funkin." />
+    <meta property="og:url" content="https://fnfpractice.web.app/" />
+    <meta property="og:image" content="https://fnfpractice.web.app/img/Screenshot.JPG" />
+    <meta name="theme-color" content="#C24B99" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
+
+        *:focus-visible {
+            outline: solid 8px #fff;
+        }
+
+        body {
+            background-color: #000;
+            color: white;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: bold;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .fnf-font {
+            font-family: 'Permanent Marker', cursive;
+            font-weight: normal;
+        }
+
+        #game-viewport {
+            position: relative;
+            width: 1200px;
+            height: 1600px;
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
+            transform-origin: center;
+            flex-shrink: 0;
+        }
+
+        .lane-container {
+            display: flex;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .lane {
+            width: 280px;
+            height: 100%;
+            /* border-left: 1px solid rgba(255, 255, 255, 0.05); */
+            /* border-right: 1px solid rgba(255, 255, 255, 0.05); */
+            position: relative;
+        }
+
+        .receptor-container {
+            position: absolute;
+            top: 150px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .receptor {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: 8px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3.5rem;
+            color: rgba(255, 255, 255, 0.5);
+            transition: transform 0.05s, opacity 0.05s;
+        }
+
+        .receptor.active {
+            opacity: 1;
+            transform: scale(1.1);
+            border-color: white;
+        }
+
+        #receptor-0.active {
+            border-color: #C24B99;
+            box-shadow: 0 0 16px 8px #C24B99;
+            background-color: rgba(194, 75, 153, 0.2);
+        }
+
+        #receptor-1.active {
+            border-color: #00FFFF;
+            box-shadow: 0 0 16px 8px #00FFFF;
+            background-color: rgba(0, 255, 255, 0.2);
+        }
+
+        #receptor-2.active {
+            border-color: #12FA05;
+            box-shadow: 0 0 16px 8px #12FA05;
+            background-color: rgba(18, 250, 5, 0.2);
+        }
+
+        #receptor-3.active {
+            border-color: #F9393F;
+            box-shadow: 0 0 16px 8px #F9393F;
+            background-color: rgba(249, 57, 63, 0.2);
+        }
+
+        .note {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            z-index: 5;
+            left: 50%;
+            top: 0;
+            will-change: transform;
+            pointer-events: none;
+            background-size: cover;
+            background-position: center;
+
+            will-change: transform;
+        }
+
+        .note-left {
+            background-color: #C24B99;
+            background-image: url();
+        }
+
+        .note-down {
+            background-color: #00FFFF;
+            background-image: url();
+        }
+
+        .note-up {
+            background-color: #12FA05;
+            background-image: url();
+        }
+
+        .note-right {
+            background-color: #F9393F;
+            background-image: url();
+        }
+
+        .overlay-screen {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-main {
+            border: 8px solid;
+            color: white;
+            padding: 2rem 6rem;
+            border-radius: 80px;
+            font-size: 3.5rem;
+            cursor: pointer;
+        }
+
+        #judgment-text {
+            position: absolute;
+            top: 400px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 6rem;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0;
+            text-shadow: 10px 10px 0px rgba(0, 0, 0, 0.5);
+        }
+
+        #status-display {
+            position: absolute;
+            top: 700px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .combo-text {
+            font-size: 6rem;
+            font-weight: 900;
+            line-height: 1;
+            font-style: italic;
+            text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
+        }
+
+        .miss-text {
+            font-size: 3rem;
+            color: #ff6464;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .flash-image-container {
+            position: absolute;
+            inset: 0;
+            z-index: 4;
+            pointer-events: none;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .flash-image-container.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .flash-image-container.fade-out {
+            opacity: 0;
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type=number] {
+            appearance: textfield;
+            -moz-appearance: textfield;
+        }
+
+        h1 {
+            text-shadow: 8px 8px black;
+        }
+
+        div>span,
+        p {
+            text-shadow: 4px 4px black;
+        }
+
+        h1 {
+            animation: sway 10s infinite ease;
+        }
+
+        .anime {
+            animation: scaleUpDown .5s infinite ease-out;
+        }
+
+        #start-screen {
+            background: linear-gradient(-45deg, #773c29, #741e3f, #12536a, #126a56);
+
+            background-size: 400% 400%;
+            animation: gradientAnimation 5s ease infinite;
+        }
+
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        @keyframes pop {
+            0% {
+                transform: translateX(-50%) scale(0.6);
+                opacity: 0;
+            }
+
+            60% {
+                transform: translateX(-50%) scale(1.1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateX(-50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes comboPop {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes scaleUpDown {
+
+            0%,
+            100% {
+                transform: scale(1) scaleY(1);
+            }
+
+            10% {
+                transform: scale(1.1) scaleY(0.8);
+            }
+
+            40% {
+                transform: scale(1) scaleY(1);
+            }
+        }
+
+        @keyframes sway {
+
+            0%,
+            100% {
+                transform: rotate(-5deg);
+            }
+
+            50% {
+                transform: rotate(5deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div style="position: absolute;">
+        <div class="note-left"></div>
+        <div class="note-down"></div>
+        <div class="note-up"></div>
+        <div class="note-right"></div>
+    </div>
+
+    <div id="game-viewport">
+        <div id="flash-image-box" class="flash-image-container">
+            <img src="img/jesus-uhd.png" alt="Flash Effect" class="w-auto object-contain">
+        </div>
+        <div id="start-screen" class="overlay-screen">
+            <div class="anime">
+                <h1 class="text-6xl mb-32 fnf-font text-pink-500 text-center text-shadow-[8px_8px_black]">FRIDAY NIGHT
+                    CLONE<br><span class="text-[10rem] text-cyan-400 tracking-normal">FUNKIN'</span></h1>
+            </div>
+            <div class="flex flex-col items-center gap-6 mb-32">
+                <span class="text-3xl text-pink-500">OPTIONS</span>
+
+                <div
+                    class="flex flex-col gap-8 p-8 bg-gray-800 border-8 border-pink-500 rounded-2xl shadow-xs w-[52rem]">
+                    <div class="flex flex-col gap-5">
+                        <div class="flex items-center justify-between gap-6">
+                            <span class="text-3xl text-white whitespace-nowrap">YOUTUBE ID</span>
+                            <input type="text" id="ytid-input" value="_4B5Hzuvy_0"
+                                class="bg-gray-700 p-4 text-3xl w-[28rem] text-center rounded-2xl border-8 border-pink-500">
+
+                        </div>
+                        <div class="flex items-center justify-between gap-6">
+                            <span class="text-3xl text-white whitespace-nowrap">DOUBLE NOTES CHANCE</span>
+                            <input type="number" id="doublenoteprob-input" value="0.0" min="0" max="1" step=".1"
+                                class="bg-gray-700 p-4 text-3xl w-56 text-center rounded-2xl border-8 border-pink-500"
+                                oninput="if(this.value > 1) this.value = 1; else if(this.value < 0) this.value = 0;">
+                        </div>
+                        <div class="relative flex items-center justify-between gap-6">
+                            <span class="text-3xl text-white whitespace-nowrap">BPM</span>
+                            <input id="bpm-input" type="number" value="240" min="0" max="1200" step="1"
+                                class="w-56 bg-gray-700 p-4 text-3xl text-center rounded-2xl border-8 border-pink-500 text-white outline-none"
+                                placeholder="BPM" oninput="this.value = Math.min(Math.max(this.value, 0), 1200);">
+                            <ul id="suggestions"
+                                class="absolute right-0 top-full z-50 mt-2 hidden max-h-80 overflow-y-auto rounded-xl bg-gray-700 border-8 border-pink-500 text-white shadow-lg text-3xl text-center">
+                                <li class="cursor-pointer px-8 py-2 hover:bg-pink-600">120</li>
+                                <li class="cursor-pointer px-8 py-2 hover:bg-pink-600">240</li>
+                                <li class="cursor-pointer px-8 py-2 hover:bg-pink-600">360</li>
+                                <li class="cursor-pointer px-8 py-2 hover:bg-pink-600">480</li>
+                                <li class="cursor-pointer px-8 py-2 hover:bg-pink-600">600</li>
+                            </ul>
+                            <script>
+                                const input = document.getElementById("bpm-input");
+                                const list = document.getElementById("suggestions");
+                                const items = [...list.querySelectorAll("li")];
+
+                                let selected = -1;
+
+                                function showList() {
+                                    list.classList.remove("hidden");
+                                }
+
+                                function hideList() {
+                                    list.classList.add("hidden");
+                                    selected = -1;
+                                    updateSelection();
+                                }
+
+                                function updateSelection() {
+                                    const selecteditem = list.querySelector('.bg-pink-600');
+                                    if (selecteditem) {
+                                        selecteditem.classList.remove('bg-pink-600');
+                                    }
+
+                                    if (items[selected]) {
+                                        items[selected].classList.add('bg-pink-600');
+                                    }
+                                }
+
+                                input.addEventListener("focus", showList);
+                                input.addEventListener("input", showList);
+
+                                input.addEventListener("keydown", e => {
+                                    if (list.classList.contains("hidden")) return;
+
+                                    if (e.key === "ArrowDown") {
+                                        e.preventDefault();
+                                        selected = Math.min(selected + 1, items.length - 1);
+                                        updateSelection();
+                                    }
+
+                                    if (e.key === "ArrowUp") {
+                                        e.preventDefault();
+                                        selected = Math.max(selected - 1, 0);
+                                        updateSelection();
+                                    }
+
+                                    if (e.key === "Enter" && selected >= 0) {
+                                        e.preventDefault();
+                                        input.value = items[selected].textContent;
+                                        // hideList();
+                                    }
+
+                                    if (e.key === "Escape") {
+                                        hideList();
+                                    }
+                                });
+
+                                items.forEach(item => {
+                                    item.addEventListener("mousedown", () => {
+                                        input.value = item.textContent;
+                                        hideList();
+                                    });
+                                });
+
+                                document.addEventListener("click", e => {
+                                    if (!e.target.closest(".relative")) {
+                                        hideList();
+                                    }
+                                });
+                            </script>
+                        </div>
+                    </div>
+                    <div class="w-full h-2 bg-pink-500 rounded-full"></div>
+                    <div class="grid grid-cols-2 gap-x-12 gap-y-6">
+                        <div class="flex items-center w-full justify-start">
+                            <input id="bordered-checkbox-1" type="checkbox"
+                                class="w-10 h-10 border-8 border-gray-400 rounded-lg bg-gray-700 accent-pink-500 cursor-pointer flex-shrink-0">
+                            <label for="bordered-checkbox-1"
+                                class="select-none py-2 ms-4 text-2xl font-medium text-white cursor-pointer truncate">
+                                MISS Sound</label>
+                        </div>
+                        <div class="flex items-center w-full justify-start">
+                            <input id="bordered-checkbox-2" type="checkbox"
+                                class="w-10 h-10 border-2 border-gray-400 rounded-lg bg-gray-700 accent-pink-500 cursor-pointer flex-shrink-0">
+                            <label for="bordered-checkbox-2"
+                                class="select-none py-2 ms-4 text-2xl font-medium text-white cursor-pointer truncate">
+                                Jesus Mod</label>
+                        </div>
+                        <div class="flex items-center w-full justify-start">
+                            <input id="bordered-checkbox-3" type="checkbox"
+                                class="w-10 h-10 border-2 border-gray-400 rounded-lg bg-gray-700 accent-pink-500 cursor-pointer flex-shrink-0">
+                            <label for="bordered-checkbox-3"
+                                class="select-none py-2 ms-4 text-2xl font-medium text-white cursor-pointer truncate">
+                                Disable Trill Pattern</label>
+                        </div>
+                        <div class="flex items-center w-full justify-start">
+                            <input id="bordered-checkbox-4" type="checkbox" checked
+                                class="w-10 h-10 border-2 border-gray-400 rounded-lg bg-gray-700 accent-pink-500 cursor-pointer flex-shrink-0">
+                            <label for="bordered-checkbox-4"
+                                class="select-none py-2 ms-4 text-2xl font-medium text-white cursor-pointer truncate">
+                                Coming Soon</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button id="start-btn" class="btn-main fnf-font tracking-wide border-pink-500 bg-gray-800">START
+                GAME</button>
+            <p class="mt-2 text-2xl text-pink-500 uppercase tracking-widest">Touch Lanes or Use DFJK</p>
+        </div>
+
+        <div id="ui-layer" class="absolute top-0 left-0 p-10 z-50 pointer-events-none">
+            <div class="text-6xl font-bold">SCORE: <span id="score">0</span></div>
+            <div class="text-3xl text-gray-400">BPM: <span id="current-bpm">0</span></div>
+        </div>
+
+        <div id="judgment-text" class="fnf-font"></div>
+
+        <div id="status-display">
+            <div id="combo-container" class="opacity-0">
+                <div id="combo-count" class="combo-text fnf-font">0</div>
+                <div class="text-4xl fnf-font text-gray-300">COMBO</div>
+            </div>
+            <div id="miss-count" class="miss-text fnf-font">0 MISS</div>
+        </div>
+
+        <div class="lane-container">
+            <div class="lane" id="lane-0" data-lane="0">
+                <div class="receptor-container">
+                    <div class="receptor" id="receptor-0">D</div>
+                </div>
+            </div>
+            <div class="lane" id="lane-1" data-lane="1">
+                <div class="receptor-container">
+                    <div class="receptor" id="receptor-1">F</div>
+                </div>
+            </div>
+            <div class="lane" id="lane-2" data-lane="2">
+                <div class="receptor-container">
+                    <div class="receptor" id="receptor-2">J</div>
+                </div>
+            </div>
+            <div class="lane" id="lane-3" data-lane="3">
+                <div class="receptor-container">
+                    <div class="receptor" id="receptor-3">K</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- <audio id="myAudio" src="sound/confirmMenu.mp3" preload="auto"></audio> -->
+    <div id="player" style="position: absolute; visibility: hidden;"></div>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-analytics.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+            apiKey: "AIzaSyBsyI-uGMEeDaPSP2U_0kDcxArY2ZWXTKg",
+            authDomain: "fnfpractice.firebaseapp.com",
+            projectId: "fnfpractice",
+            storageBucket: "fnfpractice.firebasestorage.app",
+            messagingSenderId: "955484858201",
+            appId: "1:955484858201:web:ba05bf3fbcec668c99ce48",
+            measurementId: "G-D0MMLTV78N"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+    </script>
+
+    <script>
+        const CONFIG = {
+            RECEPTOR_Y: 150,
+            VIEW_WIDTH: 1200,
+            VIEW_HEIGHT: 1600,
+            SCROLL_TIME: 500,
+            SCROLL_DISTANCE: 1600 - 150,
+            KEYS: { 'd': 0, 'f': 1, 'j': 2, 'k': 3, 'arrowleft': 0, 'arrowdown': 1, 'arrowup': 2, 'arrowright': 3 },
+            JUDGMENTS: [
+                { name: 'SICK!!', ms: 45, score: 500, color: '#ff64ff' || '#ff00ff' },
+                { name: 'GOOD!', ms: 90, score: 300, color: '#64ff64' || '#12fa05' },
+                { name: 'OK', ms: 135, score: 100, color: '#ffff64' },
+            ],
+            STREAK_PROBABILITIES: { 2: 0.0, 3: 0.0, 4: 0.0 },
+            DOUBLE_NOTE_PROB: 0.0,
+            JUDGMENT_WINDOW: 135,
+            DISABLE_TRILL_PATTERN: false
+        };
+
+        let gameState = {
+            active: false,
+            isPaused: false,
+            MissSound: false,
+            jesusMod: false,
+            lastFrameTime: 0,
+            score: 0,
+            combo: 0,
+            misses: 0,
+            notes: [],
+            lastNoteSpawnTime: 0,
+            globalLaneHistory: [0, 0, 0, 0],
+            pressedKeys: new Set()
+        };
+
+        let missSounds = [
+            'sound/missnote1.mp3', 'sound/missnote2.mp3', 'sound/missnote3.mp3'
+        ]
+
+        const viewport = document.getElementById('game-viewport');
+        const startScreen = document.getElementById('start-screen');
+        const judgmentDisplay = document.getElementById('judgment-text');
+        const comboCountEl = document.getElementById('combo-count');
+        const comboContainer = document.getElementById('combo-container');
+        const missCountEl = document.getElementById('miss-count');
+        const flashImageBox = document.getElementById('flash-image-box');
+
+        let flashImageTimer = null;
+        const confirmMenu = new Audio('sound/confirmMenu.mp3');
+        confirmMenu.volume = 0.2;
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const soundBuffers = {};
+
+        async function loadSound(name, url) {
+            try {
+                const response = await fetch(url);
+                const arrayBuffer = await response.arrayBuffer();
+                soundBuffers[name] = await audioCtx.decodeAudioData(arrayBuffer);
+                console.log(`사운드 로드 완료: ${name}`);
+            } catch (error) {
+                console.error(`사운드 로드 실패: ${name}`, error);
+            }
+        }
+        loadSound('startbutton', 'sound/confirmMenu.mp3');
+
+        function playSound(name, volume = 1.0) {
+            const buffer = soundBuffers[name];
+            if (!buffer) return;
+
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const source = audioCtx.createBufferSource();
+            const gainNode = audioCtx.createGain();
+
+            source.buffer = buffer;
+            gainNode.gain.value = volume;
+
+            source.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            source.start(0);
+        }
+
+        function handleResize() {
+            const scale = Math.min(window.innerWidth / CONFIG.VIEW_WIDTH, window.innerHeight / CONFIG.VIEW_HEIGHT);
+            viewport.style.transform = `scale(${scale})`;
+        }
+        window.addEventListener('resize', handleResize);
+        handleResize();
+
+        function startGame(clickTime) {
+            CONFIG.DOUBLE_NOTE_PROB = document.getElementById('doublenoteprob-input').value || false;
+            CONFIG.DISABLE_TRILL_PATTERN = document.getElementById('bordered-checkbox-3').checked || false;
+
+            gameState.active = true;
+            gameState.isPaused = false;
+            gameState.MissSound = document.getElementById('bordered-checkbox-1').checked || false;
+            gameState.jesusMod = document.getElementById('bordered-checkbox-2').checked || false;
+            gameState.score = 0;
+            gameState.combo = 0;
+            gameState.misses = 0;
+            gameState.notes = [];
+            gameState.bpm = parseFloat(document.getElementById('bpm-input').value) || 240;
+            gameState.globalLaneHistory = [0, 0, 0, 0];
+
+            const now = performance.now();
+
+            const oneBeatInterval = 60000 / gameState.bpm;
+            const requiredBeats = Math.ceil(1500 / oneBeatInterval);
+            const exactDelayBeatsTime = requiredBeats * oneBeatInterval;
+
+            const delay = now - clickTime;
+
+            gameState.lastNoteSpawnTime = now - delay - oneBeatInterval + exactDelayBeatsTime;
+            gameState.lastFrameTime = now;
+
+            document.getElementById('ui-layer').style.animation = `scaleUpDown ${oneBeatInterval * 2}ms infinite ease-out`;
+
+            startScreen.style.display = 'none';
+            document.getElementById('score').innerText = '0';
+            document.getElementById('current-bpm').innerText = gameState.bpm;
+
+            updateStatusUI();
+            requestAnimationFrame(gameLoop);
+        }
+
+        async function initGameSounds() {
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
+
+            await loadSound('miss1', 'sound/missnote1.mp3');
+            await loadSound('miss2', 'sound/missnote2.mp3');
+            await loadSound('miss3', 'sound/missnote3.mp3');
+            await loadSound('bell', 'sound/bell.ogg');
+        }
+
+        function pickLane(currentGroupLanes = []) {
+            let candidates = [0, 1, 2, 3].filter(l => !currentGroupLanes.includes(l));
+            let possibleLanes = candidates.filter(laneIdx => {
+                const currentStreak = gameState.globalLaneHistory[laneIdx];
+                const prob = CONFIG.STREAK_PROBABILITIES[currentStreak + 1] ?? 1.0;
+                return currentStreak === 0 || Math.random() < prob;
+            });
+
+            if (CONFIG.DISABLE_TRILL_PATTERN) {
+                const history = gameState.recentLanes || [];
+
+                if (history.length >= 2) {
+                    const a = history[history.length - 2];
+                    possibleLanes = possibleLanes.filter(lane => lane !== a);
+                }
+            }
+
+            if (possibleLanes.length === 0) possibleLanes = candidates;
+            return possibleLanes[Math.floor(Math.random() * possibleLanes.length)];
+        }
+
+        function createNote(lane, targetSpawnTime) {
+            const noteEl = document.createElement('div');
+            noteEl.className = `note note-${['left', 'down', 'up', 'right'][lane]}`;
+            document.getElementById(`lane-${lane}`).appendChild(noteEl);
+
+            gameState.notes.push({
+                lane: lane,
+                element: noteEl,
+                spawnTime: targetSpawnTime,
+                hitTime: targetSpawnTime + CONFIG.SCROLL_TIME,
+                hit: false
+            });
+        }
+
+        function spawnNotes(targetSpawnTime) {
+            const isDouble = Math.random() < CONFIG.DOUBLE_NOTE_PROB;
+            const chosenLanes = [];
+            const lane1 = pickLane([]);
+            chosenLanes.push(lane1);
+            createNote(lane1, targetSpawnTime);
+
+            if (isDouble) {
+                const lane2 = pickLane(chosenLanes);
+                chosenLanes.push(lane2);
+                createNote(lane2, targetSpawnTime);
+            }
+
+            gameState.recentLanes ??= [];
+            gameState.recentLanes.push(lane1);
+
+            if (gameState.recentLanes.length > 10) {
+                gameState.recentLanes.shift();
+            }
+
+            for (let i = 0; i < 4; i++) {
+                gameState.globalLaneHistory[i] = chosenLanes.includes(i) ? gameState.globalLaneHistory[i] + 1 : 0;
+            }
+        }
+
+        function gameLoop(now) {
+            if (!gameState.active) return;
+
+            if (gameState.isPaused) {
+                const deltaTime = now - gameState.lastFrameTime;
+                gameState.lastNoteSpawnTime += deltaTime;
+                gameState.notes.forEach(note => {
+                    note.spawnTime += deltaTime;
+                    note.hitTime += deltaTime;
+                });
+                gameState.lastFrameTime = now;
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+
+            gameState.lastFrameTime = now;
+
+            const spawnInterval = 60000 / gameState.bpm;
+            while (now - gameState.lastNoteSpawnTime >= spawnInterval) {
+                spawnNotes(gameState.lastNoteSpawnTime + spawnInterval);
+                gameState.lastNoteSpawnTime += spawnInterval;
+            }
+
+            for (let i = gameState.notes.length - 1; i >= 0; i--) {
+                const note = gameState.notes[i];
+                const elapsed = now - note.spawnTime;
+
+                const currentY = CONFIG.VIEW_HEIGHT - (CONFIG.SCROLL_DISTANCE * (elapsed / CONFIG.SCROLL_TIME));
+                note.element.style.transform = `translateX(-50%) translateY(${currentY}px)`;
+
+                if (now > note.hitTime + CONFIG.JUDGMENT_WINDOW) {
+                    if (!note.hit) applyJudgment(null);
+                    note.element.remove();
+                    gameState.notes.splice(i, 1);
+                }
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updateStatusUI() {
+            comboCountEl.innerText = gameState.combo;
+            missCountEl.innerText = `${gameState.misses} MISS`;
+            if (gameState.combo > 0) {
+                comboContainer.classList.remove('opacity-0');
+                comboContainer.style.animation = 'none';
+                void comboContainer.offsetWidth;
+                comboContainer.style.animation = 'comboPop 0.15s ease-out';
+            } else {
+                comboContainer.classList.add('opacity-0');
+            }
+        }
+
+        function applyJudgment(judgment) {
+            if (!judgment) {
+                judgmentDisplay.innerText = 'MISS';
+                judgmentDisplay.style.color = '#ff6464';
+                gameState.combo = 0;
+                gameState.misses++;
+
+                if (gameState.MissSound) {
+                    const randomMissKeys = ['miss1', 'miss2', 'miss3'];
+                    const randomKey = randomMissKeys[Math.floor(Math.random() * randomMissKeys.length)];
+                    playSound(randomKey, 0.1);
+                }
+            } else {
+                judgmentDisplay.innerText = judgment.name;
+                judgmentDisplay.style.color = judgment.color;
+                if (judgment == CONFIG.JUDGMENTS[CONFIG.JUDGMENTS.length - 1]) {
+                    gameState.combo = 0;
+
+                    if (gameState.MissSound) {
+                        const randomMissKeys = ['miss1', 'miss2', 'miss3'];
+                        const randomKey = randomMissKeys[Math.floor(Math.random() * randomMissKeys.length)];
+                        playSound(randomKey, 0.1);
+                    }
+                }
+                else {
+                    gameState.score += judgment.score;
+                    gameState.combo++;
+                    document.getElementById('score').innerText = gameState.score.toLocaleString();
+                }
+            }
+
+            updateStatusUI();
+            judgmentDisplay.style.animation = 'none';
+            void judgmentDisplay.offsetWidth;
+            judgmentDisplay.style.animation = 'pop 0.2s ease-out forwards';
+
+            clearTimeout(judgmentDisplay.timer);
+            judgmentDisplay.timer = setTimeout(() => {
+                judgmentDisplay.style.transition = 'opacity 0.2s';
+                judgmentDisplay.style.opacity = 0;
+            }, 500);
+            judgmentDisplay.style.transition = 'none';
+        }
+
+        function triggerFlashImage() {
+            clearTimeout(flashImageTimer);
+            flashImageBox.classList.remove('show', 'fade-out');
+            void flashImageBox.offsetWidth;
+            flashImageBox.classList.add('show');
+            flashImageTimer = setTimeout(() => {
+                flashImageBox.classList.add('fade-out');
+            }, 200);
+        }
+
+        function triggerInput(lane) {
+            if (!gameState.active || gameState.isPaused) return;
+
+            const now = performance.now();
+            let bestNote = null;
+            let minDiff = Infinity;
+
+            gameState.notes.forEach(note => {
+                if (note.lane === lane && !note.hit) {
+                    const diff = Math.abs(now - note.hitTime);
+                    if (diff < minDiff && diff < CONFIG.JUDGMENT_WINDOW) {
+                        minDiff = diff;
+                        bestNote = note;
+                    }
+
+                    if (gameState.jesusMod && now - note.hitTime > CONFIG.JUDGMENT_WINDOW - 45) {
+                        triggerFlashImage();
+                        playSound('bell', 0.3);
+                    }
+                }
+            });
+
+            if (bestNote) {
+                let hitJ = null;
+                for (const j of CONFIG.JUDGMENTS) {
+                    if (minDiff <= j.ms) { hitJ = j; break; }
+                }
+                if (hitJ) {
+                    bestNote.hit = true;
+                    bestNote.element.style.display = 'none';
+                    applyJudgment(hitJ);
+                }
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+
+            if (key === 'l') {
+                if (gameState.active) {
+                    gameState.isPaused = true;
+                }
+                return;
+            }
+
+            if (e.key === ' ' && startScreen.style.display !== 'none') {
+                e.preventDefault();
+                document.getElementById('start-btn').click();
+                return;
+            }
+
+            if (e.repeat) return;
+
+            const lane = CONFIG.KEYS[key];
+            if (lane === undefined) return;
+
+            gameState.pressedKeys.add(lane);
+            document.getElementById(`receptor-${lane}`).classList.add('active');
+            triggerInput(lane);
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+
+            // L 키를 떼면 확실하게 멈춤 해제
+            if (key === 'l') {
+                if (gameState.active) {
+                    gameState.isPaused = false;
+                }
+                return;
+            }
+
+            const lane = CONFIG.KEYS[key];
+            if (lane === undefined) return;
+
+            gameState.pressedKeys.delete(lane);
+            document.getElementById(`receptor-${lane}`).classList.remove('active');
+        });
+
+        // 모바일 터치 입력
+        document.querySelectorAll('.lane').forEach(laneEl => {
+            const laneIdx = parseInt(laneEl.dataset.lane);
+
+            laneEl.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (gameState.isPaused) return;
+
+                gameState.pressedKeys.add(laneIdx);
+                document.getElementById(`receptor-${laneIdx}`).classList.add('active');
+                triggerInput(laneIdx);
+            }, { passive: false });
+
+            laneEl.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                gameState.pressedKeys.delete(laneIdx);
+                document.getElementById(`receptor-${laneIdx}`).classList.remove('active');
+            }, { passive: false });
+
+            laneEl.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                gameState.pressedKeys.delete(laneIdx);
+                document.getElementById(`receptor-${laneIdx}`).classList.remove('active');
+            }, { passive: false });
+        });
+
+        document.getElementById('start-btn').addEventListener('click', async () => {
+            const clickTime = performance.now();
+            playSound('startbutton', .2);
+
+            const startBtn = document.getElementById('start-btn');
+            startBtn.disabled = true;
+
+            const fade = document.createElement('div');
+            fade.style.position = 'absolute';
+            fade.style.inset = '0';
+            fade.style.background = 'black';
+            fade.style.zIndex = '9999';
+            fade.style.opacity = '0';
+            fade.style.pointerEvents = 'none';
+            fade.style.transition = 'opacity 1s ease-in';
+            document.getElementById('game-viewport').appendChild(fade);
+            fade.offsetHeight;
+            requestAnimationFrame(() => {
+                fade.style.opacity = '1';
+            });
+            document.body.style.transition = 'all 1.125s cubic-bezier(1,0,1,0)';
+            document.body.style.transform = 'scale(10)';
+
+            for (let i = 0; i < 15; i++) {
+                // startBtn.style.visibility = (i % 2 === 0) ? 'hidden' : 'visible';
+                startBtn.classList.toggle("border-pink-500");
+                startBtn.classList.toggle("border-cyan-400");
+                await new Promise(resolve => setTimeout(resolve, 75));
+            }
+            startBtn.style.visibility = 'visible';
+
+            await initGameSounds();
+            startGame(clickTime);
+            document.body.style.transition = '';
+            document.body.style.transform = '';
+            fade.remove();
+        });
+
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === "visible") {
+                gameState.isPaused = false;
+            } else {
+                gameState.isPaused = true;
+            }
+        });
+    </script>
+    <script>
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.head.appendChild(tag);
+
+        let player;
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                host: 'https://www.youtube-nocookie.com',
+                height: '0',
+                width: '0',
+                videoId: 'ohf_XPpvgkc',
+                playerVars: {
+                    autoplay: 0,
+                    controls: 0,
+                    playsinline: 1,
+                    rel: 0
+                },
+                events: {
+                    onReady: onPlayerReady
+                }
+            });
+        }
+
+        function onPlayerReady() {
+            player.setPlaybackQuality('tiny');
+        }
+
+        document.getElementById('start-btn').addEventListener('click', async () => {
+            function extractYouTubeId(url) {
+                const regExp = /^.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/|shorts\/)|(?:(?:watch|\?v=|&v=|&vi=)))([^#\&\?]*).*/;
+                const match = url.match(regExp);
+                return (match && match[1].length === 11) ? match[1] : null;
+            }
+            player.loadVideoById(extractYouTubeId(document.getElementById('ytid-input').value));
+            // player.cueVideoById(document.getElementById('ytid-input').value);
+
+            const oneBeatInterval = 60000 / gameState.bpm;
+            const requiredBeats = Math.ceil(200 / oneBeatInterval);
+            const exactDelayBeatsTime = requiredBeats * oneBeatInterval;
+            setTimeout(() => {
+                player.playVideo();
+            }, exactDelayBeatsTime);
+        });
+    </script>
+</body>
+
+</html>
